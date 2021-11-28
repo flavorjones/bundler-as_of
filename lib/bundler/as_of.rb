@@ -84,6 +84,7 @@ module Bundler
 
       def resolve
         releases.each do |release|
+          next if release.prerelease
           return release if @dependency.requirement.satisfied_by?(release.version)
         end
         nil
@@ -108,15 +109,16 @@ module Bundler
     end
 
     class ReleaseWrapper
-      attr_reader :name, :version, :date
+      attr_reader :name, :version, :date, :prerelease
       def initialize(name, release_json)
         @name = name
         @version = Gem::Version.new(release_json["number"])
         @date = Date.parse(release_json["created_at"])
+        @prerelease = release_json["prerelease"]
       end
 
       def to_s
-        [name, version.to_s, date.to_s, dependencies.to_s].to_s
+        [name, version.to_s, date.to_s, prerelease, dependencies.to_s].to_s
       end
 
       def dependencies
