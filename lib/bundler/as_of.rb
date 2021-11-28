@@ -3,29 +3,60 @@
 require "date"
 require "open-uri"
 require "json"
+require "set"
 
 module Bundler
   module AsOf
     BUNDLE_AS_OF = "BUNDLE_AS_OF"
-    LEAVE_ALONE = ["bundler"]
 
     class InstallModifier
+      def initialize
+        @modified_dependencies = {} # name => modified Bundler::Dependency
+      end
+
       def modify_dependencies(dependencies)
         if as_of_date.nil?
           warn("NOTE: bundler-as_of is installed but #{BUNDLE_AS_OF} is not set")
           return
         end
-
         warn("NOTE: bundler-as_of: bundling dependencies as of #{as_of_date} ...")
-        dependencies.each do |dependency|
-          next if LEAVE_ALONE.include?(dependency.name)
-          orig_req = dependency.requirements_list
-          release = VersionFinder.new(dependency, as_of_date).resolve
-          if release
-            warn("NOTE: bundler-as_of: resolving #{dependency.name} #{orig_req} to #{release.version} released on #{release.date}")
-            set_dependency_requirement(dependency, release.version)
-          else
-            warn("NOTE: bundler-as_of: WARNING: could not resolve #{dependency.name} to a version matching #{dependency.requirements_list} from #{as_of_date}")
+
+        resolve_transitive_dependencies(dependencies)
+
+        dependencies.clear
+        @modified_dependencies.each do |name, dep|
+          dependencies.append(dep)
+        end
+      end
+
+      def resolve_transitive_dependencies(dependencies)
+        queued = dependencies.dup
+
+        while !queued.empty?
+          resolving = queued
+          queued = []
+
+          resolving.each do |dependency|
+            if dependency.name == "bundler"
+              raise(BundlerError, "ERROR: please remove bundler from the Gemfile or gemspec")
+            end
+
+            next if @modified_dependencies.key?(dependency.name)
+
+            orig_req = dependency.requirements_list
+            release = VersionFinder.new(dependency, as_of_date).resolve
+            if release
+              warn("NOTE: bundler-as_of: resolving #{dependency.name} #{orig_req} to #{release.version} released on #{release.date}")
+              @modified_dependencies[release.name] = Bundler::Dependency.new(release.name, release.version)
+
+              release.dependencies.each do |transitive_name, transitive_req|
+                transitive_dep = Gem::Dependency.new(transitive_name, transitive_req.split(","))
+                queued << transitive_dep
+              end
+            else
+              warn("NOTE: bundler-as_of: WARNING: could not resolve #{dependency.name} to a version matching #{dependency.requirements_list} from #{as_of_date}")
+              @modified_dependencies[dependency.name] = dependency
+            end
           end
         end
       end
@@ -42,10 +73,6 @@ module Bundler
 
       def as_of_env
         ENV[BUNDLE_AS_OF]
-      end
-
-      def set_dependency_requirement(dependency, *requirements)
-        dependency.instance_variable_set(:@requirement, Gem::Requirement.create(requirements))
       end
     end
 
@@ -89,7 +116,19 @@ module Bundler
       end
 
       def to_s
-        [name, version.to_s, date.to_s].to_s
+        [name, version.to_s, date.to_s, dependencies.to_s].to_s
+      end
+
+      def dependencies
+        gem_info.find { |info| info[:number] == version.to_s }[:dependencies] || []
+      end
+
+      def gem_info
+        @gem_info ||= Marshal.load(::URI.parse(gem_url).open.read)
+      end
+
+      def gem_url
+        @gem_url ||= "https://rubygems.org/api/v1/dependencies?gems=#{name}"
       end
     end
   end
