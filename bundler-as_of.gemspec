@@ -31,7 +31,6 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ["lib"]
 
-  spec.add_dependency("chronic", "~> 0.10")
   spec.add_development_dependency("rubocop-minitest", "~> 0.17")
   spec.add_development_dependency("rubocop-rake", "~> 0.6")
   spec.add_development_dependency("rubocop-shopify", "~> 2.3")
