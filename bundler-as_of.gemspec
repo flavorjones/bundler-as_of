@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email = ["mike.dalessio@gmail.com"]
 
   spec.summary = "Resolve gem dependencies as-of a date in the past."
-  spec.description = <<~TEXT
+  spec.description = <<-TEXT
     Resolve gem dependencies as-of a date in the past. Intended to resurrect older projects with
     out-of-date dependencies.
   TEXT

@@ -25,7 +25,7 @@ module Bundler
 
         dependencies.clear
         @modified_dependencies.each do |name, dep|
-          dependencies.append(dep)
+          dependencies << dep
         end
       end
 
