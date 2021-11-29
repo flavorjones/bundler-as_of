@@ -1,11 +1,27 @@
 # Bundler::AsOf
 
-Bundler::AsOf allows you to `bundle install` dependencies as of a certain date. This is intended for use with old projects that have not been well-maintained and that won't bundle today (but were able to be bundled on some date in the past).
+Bundler::AsOf allows you to `bundle install` dependencies as of a certain date in the past.
+
+This is intended for use with old projects that have not been well-maintained and that won't bundle or won't run today using recent releases (but were able to be bundled on some date in the past).
 
 
 ## Inspiration
 
-Inspiration for this came from @Schwad and his [portal_gun](https://github.com/Schwad/portal_gun) project. Also a bunch of old mdpress presentations that I have sitting around in Dropbox.
+Inspiration for this came from [@Schwad](https://github.com/Schwad) and his [`portal_gun`](https://github.com/Schwad/portal_gun) project. Also a bunch of old mdpress presentations that I have sitting around in Dropbox were motivating.
+
+
+## How Does It Work?
+
+`bundler-as_of` is a [Bundler plugin](https://bundler.io/bundle_plugin.html) that uses a `before-install-all` hook to modify the dependencies that Bundler installs and writes to the lockfile.
+
+It traverses the full dependency graph (including transitive dependencies) and whenever possible, resolves the version to the latest release that both:
+
+1. satisfies the version requirements specified (if any)
+2. existed as-of the date specified
+
+So, more specifically, `bundler-as_of` will try to avoid any releases that were made _after_ the specified date.
+
+Occasionally, `bundler-as_of` may not be able to find a dependency that meets both of these criteria, and in that case will print a warning and will not modify the dependency.
 
 
 ## Usage
@@ -27,7 +43,7 @@ BUNDLE_AS_OF=2013-11-11 bundle install
 You should see something like this as the output:
 
 ``` text
-$ BUNDLE_AS_OF=2013-09-22 bi
+$ BUNDLE_AS_OF=2013-09-22 bundle install
 NOTE: bundler-as_of: bundling dependencies as of 2013-09-22 ...
 NOTE: bundler-as_of: resolving xml-focus [">= 0"] to 0.0.1 released on 2013-08-07
 NOTE: bundler-as_of: resolving rake [">= 0"] to 10.1.0 released on 2013-06-20
@@ -52,19 +68,20 @@ Using rspec 2.14.1
 Using xml-focus 0.0.1
 Bundle complete! 9 Gemfile dependencies, 10 gems now installed.
 Use `bundle info [gemname]` to see where a bundled gem is installed.
-
 ```
 
 ## Tips
 
-Once you find the date that works, you may want to use something like [`direnv`](https://direnv.net/) to automatically load that environment variable when you `cd` into the project directory.
+Once you find a date that works, you may want to use something like [`direnv`](https://direnv.net/) to "remember" the date by automatically loading that environment variable when you `cd` into the project directory.
 
 
 ## This Gem Won't Help You With ...
 
 ### ... finding and using the right Ruby version
 
-`bundler-as_of` only resolves gem dependencies as of the given date. You can look up [Ruby version release dates](https://www.ruby-lang.org/en/downloads/releases/) and use the [Ruby dockerhub OCI images](https://hub.docker.com/_/ruby) for the particular version you want to use.
+`bundler-as_of` only resolves gem dependencies as of the given date, and doesn't do anything (yet?) to make sure you're using a version of Ruby that existed on that date.
+
+A manual alternative is to use a table of [Ruby version release dates](https://www.ruby-lang.org/en/downloads/releases/) and then run everything in the [Ruby dockerhub OCI images](https://hub.docker.com/_/ruby) for the particular version you want to use.
 
 
 ## Contributing
