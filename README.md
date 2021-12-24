@@ -26,10 +26,17 @@ Occasionally, `bundler-as_of` may not be able to find a dependency that meets bo
 
 ## Usage
 
-First, install this gem as a bundler plugin. I haven't packaged a gem yet, so the best thing to do right now is bundle from git:
+First, install this gem as a bundler plugin:
 
 ``` sh
-bundle plugin install --git=https://github.com/flavorjones/bundler-as_of --branch=main bundler-as_of
+$ bundle plugin install bundler-as_of
+
+Fetching gem metadata from https://rubygems.org/.
+Resolving dependencies...
+Using bundler 2.3.3
+Fetching bundler-as_of 0.1.0
+Installing bundler-as_of 0.1.0
+Installed plugin bundler-as_of
 ```
 
 (Note that bundler plugins are project-specific and are installed into the `.bundler` subdirectory.)
