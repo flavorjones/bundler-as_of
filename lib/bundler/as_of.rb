@@ -44,8 +44,8 @@ module Bundler
             next if @modified_dependencies.key?(dependency.name)
 
             orig_req = dependency.requirements_list
-            release = VersionFinder.new(dependency, as_of_date).resolve
-            if release
+            release, exact_match = VersionFinder.new(dependency, as_of_date).resolve
+            if exact_match
               warn("NOTE: bundler-as_of: resolving #{dependency.name} #{orig_req} to #{release.version} released on #{release.date}")
               @modified_dependencies[release.name] = Bundler::Dependency.new(release.name, release.version)
 
@@ -54,7 +54,11 @@ module Bundler
                 queued << transitive_dep
               end
             else
-              warn("NOTE: bundler-as_of: WARNING: could not resolve #{dependency.name} to a version matching #{dependency.requirements_list} from #{as_of_date}")
+              warn(
+                "NOTE: bundler-as_of: WARNING: could not resolve #{dependency.name} to a version " \
+                  "matching #{dependency.requirements_list} from #{as_of_date}\n\n" \
+                  "Deferring to #{dependency.name} #{release.version} from #{release.date}"
+              )
               @modified_dependencies[dependency.name] = dependency
             end
           end
@@ -85,9 +89,11 @@ module Bundler
       def resolve
         releases.each do |release|
           next if release.prerelease
-          return release if @dependency.requirement.satisfied_by?(release.version)
+          return [release, true] if @dependency.requirement.satisfied_by?(release.version)
         end
-        nil
+
+        # We did not find an exact match, and are reverting to the oldest possible match
+        [releases.first, false]
       end
 
       def releases

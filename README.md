@@ -21,7 +21,7 @@ It traverses the full dependency graph (including transitive dependencies) and w
 
 So, more specifically, `bundler-as_of` will try to avoid any releases that were made _after_ the specified date.
 
-Occasionally, `bundler-as_of` may not be able to find a dependency that meets both of these criteria, and in that case will print a warning and will not modify the dependency.
+Occasionally, `bundler-as_of` may not be able to find a dependency that meets both of these criteria. In that case will print a warning and will use the oldest possible dependency.
 
 
 ## Usage
