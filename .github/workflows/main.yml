@@ -8,20 +8,38 @@ on:
   pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  test:
     strategy:
+      fail-fast: false
       matrix:
         ruby:
-          - 3.0.3
-
+        - '2.7'
+        - '3.0'
+        - '3.1'
+        - head
+    name: CI
+    runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
+    - uses: actions/checkout@master
+    - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-    - name: Run the default task
-      run: bundle exec rake
+        ruby-version: ${{ matrix.ruby }}
+    - name: Test
+      run: bundle exec rake test
+
+  check:
+    name: Lint
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+    - uses: actions/checkout@master
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+        ruby-version: '3.1'
+    - name: Check
+      run: bundle exec rubocop
