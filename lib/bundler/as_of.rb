@@ -24,7 +24,7 @@ module Bundler
         resolve_transitive_dependencies(dependencies)
 
         dependencies.clear
-        @modified_dependencies.each do |name, dep|
+        @modified_dependencies.each do |_name, dep|
           dependencies << dep
         end
       end
@@ -32,7 +32,7 @@ module Bundler
       def resolve_transitive_dependencies(dependencies)
         queued = dependencies.dup
 
-        while !queued.empty?
+        until queued.empty?
           resolving = queued
           queued = []
 
@@ -46,7 +46,10 @@ module Bundler
             orig_req = dependency.requirements_list
             release = VersionFinder.new(dependency, as_of_date).resolve
             if release
-              warn("NOTE: bundler-as_of: resolving #{dependency.name} #{orig_req} to #{release.version} released on #{release.date}")
+              warn(
+                "NOTE: bundler-as_of: resolving #{dependency.name} #{orig_req} to #{release.version} " \
+                  "released on #{release.date}"
+              )
               @modified_dependencies[release.name] = Bundler::Dependency.new(release.name, release.version)
 
               release.dependencies.each do |transitive_name, transitive_req|
@@ -54,7 +57,10 @@ module Bundler
                 queued << transitive_dep
               end
             else
-              warn("NOTE: bundler-as_of: WARNING: could not resolve #{dependency.name} to a version matching #{dependency.requirements_list} from #{as_of_date}")
+              warn(
+                "NOTE: bundler-as_of: WARNING: could not resolve #{dependency.name} to a version matching " \
+                  "#{dependency.requirements_list} from #{as_of_date}"
+              )
               @modified_dependencies[dependency.name] = dependency
             end
           end
@@ -110,6 +116,7 @@ module Bundler
 
     class ReleaseWrapper
       attr_reader :name, :version, :date, :prerelease
+
       def initialize(name, release_json)
         @name = name
         @version = Gem::Version.new(release_json["number"])
